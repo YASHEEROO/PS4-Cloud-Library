@@ -1,29 +1,22 @@
-# إعدادات مسارات أداة OpenOrbis للـ PS4
+# تعريف المترجم والمسارات إجبارياً
+CC              := clang++
 Target          := PS34CloudLibrary
 OutDir          := $(CURDIR)/bin
 
-# لغات البرمجة والمترجمات المطلوبة
-Compiler        := clang++
+# مسارات التضمين والمكتبات من الـ SDK المفتوح
 IncludeDir      := -I$(OO_PS4_TOOLCHAIN)/include -I$(OO_PS4_TOOLCHAIN)/include/SDL2
+LinkerFlags     := -L$(OO_PS4_TOOLCHAIN)/lib -lScePad -lSDL2 -lSDL2_image -lSDL2_ttf -lcurl -lssl -lcrypto
 
-# ربط المكتبات المطلوبة (الرسوميات، الخطوط، الأمان، الشبكة)
-LinkLibraries   := -lScePad -lSDL2 -lSDL2_image -lSDL2_ttf -lcurl -lssl -lcrypto
-
-# أعلام التجميع للنظام
-CompilerFlags   := -O2 -std=c++17 $(IncludeDir)
-LinkerFlags     := -L$(OO_PS4_TOOLCHAIN)/lib $(LinkLibraries)
-
-# ملفات المشروع
-SourceFiles     := main.cpp
-ObjectFiles     := $(SourceFiles:.cpp=.o)
-
+# قواعد التجميع الصارمة لمنع المترجم الافتراضي من التدخل
 all: $(Target).pkg
 
-$(Target).elf: $(ObjectFiles)
-	@mkdir -p $(OutDir)
-	$(Compiler) $(ObjectFiles) -o $(OutDir)/$(Target).elf $(LinkerFlags)
+main.o: main.cpp
+	$(CC) -c main.cpp -o main.o -O2 -std=c++17 $(IncludeDir)
 
-# تحويل الكود المجمع إلى حزمة .pkg وهمية التوقيع (Fake Signed) جاهزة للـ PS4
+$(Target).elf: main.o
+	@mkdir -p $(OutDir)
+	$(CC) main.o -o $(OutDir)/$(Target).elf $(LinkerFlags)
+
 $(Target).pkg: $(Target).elf
 	@echo "[📦] جاري إنشاء حزمة الـ PKG النهائية للـ PS4..."
 	create-pkg --input $(OutDir)/$(Target).elf --output $(OutDir)/$(Target).pkg --title "PS3/PS4 Cloud Library" --content-id UP0001-CLD123456_00-MAINAPPLICATION0
